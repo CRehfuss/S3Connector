@@ -54,7 +54,7 @@ MakeDirectory = (content, url) =>
     in
         reordered;
 
-// Allows the navigation of the tables
+// Enables navigation
 Table.ToNavigationTable = (table as table, nameColumn as text, dataColumn as text, isLink as logical) =>
     let
         tableType = Value.Type(table),
