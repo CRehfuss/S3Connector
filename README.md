@@ -14,7 +14,10 @@ TO RUN LOCALLY:
 TO RUN ON POWERBI
 
 Follow the instructions listed here: https://github.com/Microsoft/DataConnectors#quickstart
+
 NOTE: The extension file will be named AmazonS3.mez
+
+
 
 
 
