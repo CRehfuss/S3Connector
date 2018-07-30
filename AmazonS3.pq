@@ -54,7 +54,42 @@ MakeDirectory = (content, url) =>
     in
         reordered;
 
+// Allows the navigation of the tables
+Table.ToNavigationTable = (table as table, nameColumn as text, dataColumn as text, isLink as logical) =>
+    let
+        tableType = Value.Type(table),
+        rowType = Type.TableRow(tableType),
+        rowFields = Type.RecordFields(rowType),
+        dataColumnField = Record.Field(rowFields, dataColumn),
+        dataColumnType = dataColumnField[Type],
+
+        newDataColumnType = if isLink then dataColumnType meta [Link = "Table", LinkName = "Table"] else dataColumnType,
+        newDataColumnField = dataColumnField & [Type = newDataColumnType],
+        newRowFields = rowFields & Record.FromList({newDataColumnField}, {dataColumn}),
+        newRowType = Type.ForRecord(newRowFields, Type.IsOpenRecord(rowType)),
+        newTableType = (type table newRowType) meta [Name = nameColumn, Data = dataColumn],
+
+        tableWithKey = Table.Distinct(table, nameColumn),
+        navigationTable = Value.ReplaceType(tableWithKey, newTableType)
+    in
+        navigationTable;
+
+//Creates a list specifically of the buckets 
+MakeBucketList = (content, url) =>
+    let
+        xml = Xml.Tables(content),
+        filtered = Table.SelectRows(xml, each [Name] = "Buckets"),
+        table = filtered{0}[Table]{0}[Table],
+        narrowed = Table.SelectColumns(table,{"Name"}),
+        changedType = Table.TransformColumnTypes(table,{{"Name", type text}}),
+        withDirectory = Table.AddColumn(changedType, "Data", each S3.Contents(url & "/" & [Name])),
+        asNav = Table.ToNavigationTable(withDirectory, "Name", "Data", false)
+    in
+        asNav;
+
 // NOTE in credential: Username is actually the access key and the Password is the secretAccessKey
+// This is the meat of the logic. 
+// We do an API call and perform a GET of the queryString. S3 API calls require certain signatures, authentication, and headers.
 // To read the Amazon documentation that this is based on go here: https://docs.aws.amazon.com/AmazonS3/latest/dev/RESTAPI.html
 S3.Contents = (url as text) =>
     let
@@ -82,7 +117,7 @@ S3.Contents = (url as text) =>
         auth = "AWS4-HMAC-SHA256 Credential=" & keyId & "/" & id & ", SignedHeaders=host;x-amz-date, Signature=" & Binary.ToText(signature, BinaryEncoding.Hex),
         content = Web.Contents(url, [Headers=[#"x-amz-date"=time, Authorization=auth, #"x-amz-content-sha256"=contentHash], ExcludedFromCacheKey={"x-amz-date", "Authorization"}]),
         bucket = if canonicalUri = "/" then parsedHost[bucket] else if parsedHost[bucket] = null and Text.PositionOf(canonicalUri, "/", 1) < 0 then Text.Range(canonicalUri, 1) else null,
-        result = if bucket <> null then MakeDirectory(content, url) else content
+        result = if bucket <> null then MakeDirectory(content, url) else if canonicalUri = "/" then MakeBucketList(content, url) else content
     in
         result;
 
