@@ -1,7 +1,7 @@
 # S3Connector
 
 
-TO RUN LOCALLY: 
+# To run locally: 
 
 0. Download the code
 1. Update AmazonS3.query.pq to have your S3 bucket Url
@@ -11,7 +11,7 @@ TO RUN LOCALLY:
 5. Click Set Credential
 6. Rerun this program, the contents of your bucket should now be displayed in the output window
 
-TO RUN ON POWERBI
+# To run on Power BI
 
 Follow the instructions listed here: https://github.com/Microsoft/DataConnectors#quickstart
 
